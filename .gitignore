@@ -3,3 +3,4 @@ build
 main.spec
 __pycache__
 setting.json
+.DS_Store

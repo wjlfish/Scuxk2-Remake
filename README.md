@@ -13,7 +13,7 @@
 - 本软件基于GPL-3协议开源，请遵守该协议内容，若不同意，请勿下载、使用、传播本软件
 - 若不同意以上使用条例，请停止clone本项目并不得通过任何途径使用本项目
 - 本项目源码以及条例解释权归本人所有
-
+- 本Github账号仅用于发布该仓库，不代表开发者就是账户所有者
 
 ## 🔧使用方式
 
@@ -53,7 +53,7 @@
 |项目|框架|安装来源|安装方式|
 |:---:|:---:|:---:|:---|
 |语言🗨|Python3.8+环境|用户安装|[Python Org](https://www.python.org/downloads/)|
-|浏览器🌏|Edge(Chromium)|用户安装|[Microsoft Edge](https://www.microsoft.com/en-us/edge/download)|
+|浏览器🌏|Chrome(Chromium)|用户安装|[Google Chrome](https://google.cn/chrome/)|
 |Web库👨‍💻|selenium|pip|pip install selenium|
 |Web库👨‍💻|fake_useragent|pip|pip install fake_useragent|
 |验证码处理库🪪|[ddddocr](https://github.com/sml2h3/ddddocr)|pip|pip install ddddocr|
