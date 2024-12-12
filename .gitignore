@@ -4,3 +4,11 @@ main.spec
 __pycache__
 setting.json
 .DS_Store
+*.sublime-*
+.gitignore
+pyvenv.cfg
+lib/
+bin/
+.idea
+include/
+share/
