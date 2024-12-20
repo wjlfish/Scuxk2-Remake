@@ -19,7 +19,7 @@
 
 运行`main.py`以启动主程序
 
-若要更改抢课内容请运行`initialize.py`(CLI),或者运行`initialize_plus.py`(GUI)
+若要更改抢课内容请运行`initialize.py`(CLI)
 
 ### 程序配置文件`setting.json`
 |项目|值类型|默认值|含义|
