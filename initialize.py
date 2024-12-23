@@ -26,7 +26,7 @@ def main() -> dict:
         course_data["course_id"] = input("输入课程号: ")
         course_data["course_index"] = input("输入课序号(必须为两位数，如:01、33): ")
         try:
-            int(course_data["course_id"]), int(course_data["course_index"])
+            course_data["course_id"], int(course_data["course_index"])
             if len(course_data["course_index"]) != 2:
                 raise Exception
         except:
