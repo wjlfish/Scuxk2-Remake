@@ -1,10 +1,13 @@
 import time
+import datetime
 import initialize
 import json
 import re
 import base64
 import os
 import random
+import requests
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
 failed_OCR_limit = 3  # 当自动识别验证码出错超过该值，切换为手动输入
 Debug = True  # Open the browser interface
@@ -64,7 +67,25 @@ except FileNotFoundError:
     print("你似乎还没有在本地保存账户信息，请手动输入")
     user_data = initialize.main()
 
+def record_course_selection(c_type, course_id, course_index):
+    for course in user_data["course"][c_type]:
+        if course["course_id"] == course_id and course["course_index"] == course_index:
+            course["selected"] = True
+            course["selected_time"] = datetime.datetime.now().isoformat()
+            initialize.save_user_date(user_data)
+            break
 
+def can_select_course(c_type, course_id, course_index):
+    for course in user_data["course"][c_type]:
+        if course["course_id"] == course_id and course["course_index"] == course_index:
+            if "selected" in course and course["selected"]:
+                last_selected_time = datetime.datetime.fromisoformat(course["selected_time"])
+                # 如果距离上次选择的时间不到一小时，跳过此课程
+                if (datetime.datetime.now() - last_selected_time).seconds < 3600:
+                    print(f"课程 {course_id}_{course_index} 已选择过，且距离上次选择未满一小时，跳过。")
+                    return False
+            break
+    return True
 def manual_login():
     print("手动登录")
     url = "http://zhjw.scu.edu.cn/login"
@@ -167,6 +188,12 @@ def catch_course(c_type: str):
 
     wait_for_ready(web_wait)
     for course in user_data["course"][c_type]:
+        # 在此处检查是否已经选择过该课程
+        course_id, course_index = course["course_id"], course["course_index"]
+
+        # 在此处检查是否已经选择过该课程
+        if not can_select_course(c_type, course_id, course_index):
+            continue  # 如果已经选择过，跳过此课程
         driver.switch_to.frame('ifra')
         course_id_box = driver.find_element(By.XPATH, "//*[@id=\"kch\"]")
         search_box = driver.find_element(
@@ -189,13 +216,44 @@ def catch_course(c_type: str):
         # logs = driver.get_log("browser")
         # for log in logs:
         #     print(log)
+        ocr = ddddocr.DdddOcr(show_ad=False,beta=True)
         if find_target:
-            print("Successfully picked up the course with ID %s_%s" %
-                  (course_id, course_index))
 
-            submit_box = driver.find_element(
-                By.XPATH, "//*[@id=\"submitButton\"]")
+            try:
+                yzm_img = driver.find_element(By.XPATH, "//*[@id=\"yzm_area\"]/img")
+                captcha_visible = True
+                # 获取验证码图片 URL
+                captcha_src = yzm_img.get_attribute("src")
+                print("Captcha URL:", captcha_src)
+            except:
+                captcha_visible = False
+                print("No captcha found, proceeding with normal process.")
+
+            if captcha_visible:
+                # 下载验证码图片
+                captcha_url = driver.current_url.split('/student')[0] + captcha_src
+                captcha_response = requests.get(captcha_url, cookies=driver.get_cookies())
+                with open("captcha.png", "wb") as f:
+                    f.write(captcha_response.content)
+
+                # 使用 ddddocr 识别验证码
+                with open("captcha.png", "rb") as f:
+                    captcha_text = ocr.classification(f.read())
+                print("Recognized Captcha:", captcha_text)
+
+                # 输入验证码
+                submit_code_input = driver.find_element(By.ID, "submitCode")
+                submit_code_input.clear()
+                submit_code_input.send_keys(captcha_text)
+
+                # 提交表单
+            submit_box = driver.find_element(By.ID, "submitButton")
             submit_box.click()
+
+            print("Selected ID %s_%s" %
+                  (course_id, course_index))
+            # 在成功选择后记录此课程
+            record_course_selection(c_type, course_id, course_index)
         else:
             print("Failed to find the course with ID %s_%s" %
                   (course_id, course_index))
@@ -274,8 +332,8 @@ if __name__ == '__main__':
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
                            "source": "Object.defineProperty(navigator,'webdriver',{get: () => undefined})"})
 
-    driver.implicitly_wait(10)
-    web_wait = WebDriverWait(driver, 30, 0.5)
+    driver.implicitly_wait(3)
+    web_wait = WebDriverWait(driver, 3, 0.5)
 
     def wait_for_ready(driver_wait: WebDriverWait):
         driver_wait.until(lambda webDriver: webDriver.execute_script(
@@ -287,7 +345,7 @@ if __name__ == '__main__':
         auto_login()
 
     # 等待登录完成后的跳转
-    WebDriverWait(driver, 120, 0.5).until(lambda driver: driver.current_url == "http://zhjw.scu.edu.cn/index" or driver.current_url ==
+    WebDriverWait(driver, 5, 0.5).until(lambda driver: driver.current_url == "http://zhjw.scu.edu.cn/index" or driver.current_url ==
                                           "http://zhjw.scu.edu.cn/", "Please check your Internet and rerun the program!")
 
     print("Redirecting to select course page")
